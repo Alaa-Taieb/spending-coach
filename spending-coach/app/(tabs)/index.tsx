@@ -1,128 +1,71 @@
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import { StyleSheet, useColorScheme, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Text, Pressable } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { IconSymbol, IconSymbolName } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
-
-// Custom color palette definition at the top of the file
-const colors = {
-  // Primary colors
-  primary: {
-    light: '#6366f1', // Base primary color
-    dark: '#818cf8',
-    gradient: {
-      light: ['#6366f1', '#4f46e5'] as const, // Add as const here
-      dark: ['#818cf8', '#6366f1'] as const,  // Add as const here
-    }
-  },
-  
-  // Background colors
-  background: {
-    light: '#ffffff',
-    dark: '#111827',
-    surface: {
-      light: 'rgba(248, 250, 252, 0.8)',
-      dark: 'rgba(30, 41, 59, 0.8)',
-    }
-  },
-  
-  // Text colors
-  text: {
-    primary: {
-      light: '#1f2937',
-      dark: '#f3f4f6',
-    },
-    secondary: {
-      light: '#4b5563',
-      dark: '#9ca3af',
-    },
-    onPrimary: '#ffffff',
-  },
-  
-  // Border colors
-  border: {
-    light: '#e5e7eb',
-    dark: '#374151',
-  },
-  
-  // Status colors
-  status: {
-    success: {
-      light: '#22c55e',
-      dark: '#4ade80',
-    },
-    error: {
-      light: '#ef4444',
-      dark: '#f87171',
-    },
-    warning: {
-      light: '#eab308',
-      dark: '#facc15',
-    },
-    info: {
-      light: '#3b82f6',
-      dark: '#60a5fa',
-    }
-  },
-  
-  // Progress bar colors
-  progress: {
-    background: {
-      light: 'rgba(255, 255, 255, 0.15)',
-      dark: 'rgba(255, 255, 255, 0.15)',
-    },
-    fill: {
-      light: '#e0e7ff',
-      dark: '#a5b4fc',
-    }
-  }
-} as const; // Make the entire colors object readonly
+import { useColorScheme } from '@/hooks/useColorScheme';
 
 export default function HomeScreen() {
-  const colorScheme = useColorScheme();
+  const colorScheme = useColorScheme() ?? 'light';
+  const colors = Colors[colorScheme];
   const isDark = colorScheme === 'dark';
 
   return (
     <ParallaxScrollView
       headerBackgroundColor={{
-        light: colors.background.light,
-        dark: colors.background.dark
+        light: Colors.light.background.main,
+        dark: Colors.dark.background.main
       }}
       headerImage={
         <View style={styles.headerImageContainer}>
           <LinearGradient
-            colors={isDark ? colors.primary.gradient.dark : colors.primary.gradient.light}
+            colors={[colors.primary.main, colors.primary.dark]}
             style={StyleSheet.absoluteFill}
           />
           <View style={styles.headerContent}>
             {/* Spending Overview */}
             <View style={styles.spendingOverview}>
-              <Text style={styles.overviewTitle}>Monthly Overview</Text>
+              <Text style={[styles.overviewTitle, { color: colors.primary.contrast }]}>
+                Monthly Overview
+              </Text>
               <View style={styles.progressContainer}>
-                <View style={styles.progressBar}>
-                  <View style={[styles.progressFill, { width: '65%' }]} />
+                <View style={[styles.progressBar, { backgroundColor: colors.primary.overlay }]}>
+                  <View style={[styles.progressFill, { 
+                    width: '65%',
+                    backgroundColor: colors.status.success.light
+                  }]} />
                 </View>
                 <View style={styles.progressLabels}>
-                  <Text style={styles.progressText}>$1,850 spent</Text>
-                  <Text style={styles.progressText}>$2,800 budget</Text>
+                  <Text style={[styles.progressText, { color: colors.text.onOverlay }]}>
+                    $1,850 spent
+                  </Text>
+                  <Text style={[styles.progressText, { color: colors.text.onOverlay }]}>
+                    $2,800 budget
+                  </Text>
                 </View>
               </View>
             </View>
 
             {/* Quick Insights */}
             <View style={styles.insightsContainer}>
-              <View style={styles.insightItem}>
+              <View style={[styles.insightItem, { 
+                backgroundColor: colors.primary.overlay 
+              }]}>
                 <IconSymbol 
                   name="chart.line.uptrend.xyaxis" 
                   size={24} 
-                  color={colors.status.success.light}
+                  color={colors.status.success.main}
                 />
                 <View style={styles.insightText}>
-                  <Text style={styles.insightLabel}>Biggest Saving</Text>
-                  <Text style={styles.insightValue}>-15% on Food</Text>
+                  <Text style={[styles.insightLabel, { color: colors.text.onOverlay }]}>
+                    Biggest Saving
+                  </Text>
+                  <Text style={[styles.insightValue, { color: colors.primary.contrast }]}>
+                    -15% on Food
+                  </Text>
                 </View>
               </View>
               <View style={styles.insightItem}>
@@ -141,145 +84,64 @@ export default function HomeScreen() {
         </View>
       }
     >
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <BlurView 
-            intensity={isDark ? 20 : 40} 
-            tint={isDark ? 'dark' : 'light'} 
-            style={[styles.headerContent, {
-              backgroundColor: isDark 
-                ? `${colors.primary.dark}E6`
-                : `${colors.primary.light}E6`
-            }]}
-          >
-            {/* Profile and Balance Section */}
-            <View style={styles.welcomeContainer}>
-              <Text style={[styles.greeting, { color: 'rgba(255, 255, 255, 0.95)' }]}>
-                Good morning,
+      <View style={[styles.mainContent, { backgroundColor: colors.background.main }]}>
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
+              Recent Transactions
+            </Text>
+            <Pressable>
+              <Text style={[styles.sectionAction, { color: colors.primary.main }]}>
+                See All
               </Text>
-              <Text style={[styles.name, { color: '#ffffff' }]}>
-                Alex
-              </Text>
-            </View>
-
-            {/* Total Balance */}
-            <View style={styles.balanceContainer}>
-              <Text style={[styles.balanceLabel, { color: 'rgba(255, 255, 255, 0.8)' }]}>
-                Total Balance
-              </Text>
-              <Text style={[styles.balanceAmount, { color: '#ffffff' }]}>
-                $2,450.85
-              </Text>
-              <View style={styles.trendContainer}>
-                <IconSymbol 
-                  name="chart.line.uptrend.xyaxis"
-                  size={16} 
-                  color={colors.status.success.light} 
-                />
-                <Text style={[styles.trendText, { color: colors.status.success.light }]}>
-                  +2.4% this month
-                </Text>
-              </View>
-            </View>
-
-            {/* Quick Stats Section */}
-            <BlurView
-              intensity={isDark ? 20 : 40}
-              tint={isDark ? 'dark' : 'light'}
-              style={[
-                styles.quickStats,
-                {
-                  backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(248, 250, 252, 0.8)'
-                }
-              ]}
-            >
-              <View style={styles.statItem}>
-                <Text style={[styles.statLabel, { color: 'rgba(255, 255, 255, 0.8)' }]}>
-                  Daily Budget
-                </Text>
-                <Text style={[styles.statValue, { color: '#ffffff' }]}>
-                  $45
-                </Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={[styles.statLabel, { color: 'rgba(255, 255, 255, 0.8)' }]}>
-                  Week Savings
-                </Text>
-                <Text style={[styles.statValue, { color: '#ffffff' }]}>
-                  $120
-                </Text>
-              </View>
-            </BlurView>
-          </BlurView>
-        </View>
-
-        <View style={styles.mainContent}>
-          {/* Recent Transactions Section */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { 
-                color: colors.text.primary[isDark ? 'dark' : 'light']
-              }]}>
-                Recent Transactions
-              </Text>
-              <Pressable>
-                <Text style={[styles.sectionAction, {
-                  color: colors.primary[isDark ? 'dark' : 'light']
-                }]}>
-                  See All
-                </Text>
-              </Pressable>
-            </View>
-            <View style={styles.transactionList}>
-              <TransactionItem 
-                icon="cart.fill"
-                title="Grocery Shopping"
-                amount={-85.50}
-                date="Today"
-              />
-              <TransactionItem 
-                icon="fork.knife"
-                title="Restaurant"
-                amount={-32.40}
-                date="Yesterday"
-              />
-              <TransactionItem 
-                icon="car.fill"
-                title="Gas Station"
-                amount={-45.00}
-                date="Sep 20"
-              />
-            </View>
+            </Pressable>
+          </View>
+          <View style={styles.transactionList}>
+            <TransactionItem 
+              icon="cart.fill"
+              title="Grocery Shopping"
+              amount={-85.50}
+              date="Today"
+            />
+            <TransactionItem 
+              icon="fork.knife"
+              title="Restaurant"
+              amount={-32.40}
+              date="Yesterday"
+            />
+            <TransactionItem 
+              icon="car.fill"
+              title="Gas Station"
+              amount={-45.00}
+              date="Sep 20"
+            />
           </View>
         </View>
 
-        {/* Quick Actions Section */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { 
-            color: colors.text.primary[isDark ? 'dark' : 'light']
-          }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
             Quick Actions
           </Text>
           <View style={styles.quickActions}>
             <QuickActionButton 
               icon="plus.circle.fill"
               title="Add"
-              color={isDark ? colors.status.info.dark : colors.status.info.light}
+              color={colors.status.info.main}
             />
             <QuickActionButton 
               icon="chart.bar.fill"
               title="Reports"
-              color={isDark ? colors.status.success.dark : colors.status.success.light}
+              color={colors.status.success.main}
             />
             <QuickActionButton 
               icon="gear"
               title="Settings"
-              color={isDark ? colors.status.error.dark : colors.status.error.light}
+              color={colors.status.error.main}
             />
             <QuickActionButton 
               icon="dollarsign.circle"
               title="Budget"
-              color={isDark ? colors.status.warning.dark : colors.status.warning.light}
+              color={colors.status.warning.main}
             />
           </View>
         </View>
@@ -296,37 +158,39 @@ interface TransactionItemProps {
 }
 
 function TransactionItem({ icon, title, amount, date }: TransactionItemProps) {
-  const isDark = useColorScheme() === 'dark';
+  const colorScheme = useColorScheme() ?? 'light';
+  const colors = Colors[colorScheme];
+  const isDark = colorScheme === 'dark';
   
   return (
     <BlurView 
       intensity={isDark ? 15 : 30} 
       tint={isDark ? 'dark' : 'light'} 
       style={[styles.transactionItem, {
-        backgroundColor: colors.background.surface[isDark ? 'dark' : 'light'],
-        borderColor: colors.border[isDark ? 'dark' : 'light'],
+        backgroundColor: colors.background.surface,
+        borderColor: colors.border.main,
         borderWidth: 1,
       }]}
     >
       <View style={[styles.transactionIcon, { 
         backgroundColor: amount < 0 
-          ? colors.status.error[isDark ? 'dark' : 'light']
-          : colors.status.success[isDark ? 'dark' : 'light']
+          ? colors.status.error.main
+          : colors.status.success.main
       }]}>
         <IconSymbol name={icon} size={20} color={colors.text.onPrimary} />
       </View>
       <View style={styles.transactionDetails}>
-        <Text style={[styles.transactionTitle, { 
-          color: colors.text.primary[isDark ? 'dark' : 'light']
-        }]}>{title}</Text>
-        <Text style={[styles.transactionDate, { 
-          color: colors.text.secondary[isDark ? 'dark' : 'light']
-        }]}>{date}</Text>
+        <Text style={[styles.transactionTitle, { color: colors.text.primary }]}>
+          {title}
+        </Text>
+        <Text style={[styles.transactionDate, { color: colors.text.secondary }]}>
+          {date}
+        </Text>
       </View>
       <Text style={[styles.transactionAmount, { 
         color: amount < 0 
-          ? colors.status.error[isDark ? 'dark' : 'light']
-          : colors.status.success[isDark ? 'dark' : 'light']
+          ? colors.status.error.main
+          : colors.status.success.main
       }]}>
         {amount < 0 ? '-' : '+'}${Math.abs(amount).toFixed(2)}
       </Text>
@@ -341,7 +205,9 @@ interface QuickActionButtonProps {
 }
 
 function QuickActionButton({ icon, title, color }: QuickActionButtonProps) {
-  const isDark = useColorScheme() === 'dark';
+  const colorScheme = useColorScheme() ?? 'light';
+  const colors = Colors[colorScheme];
+  const isDark = colorScheme === 'dark';
 
   return (
     <Pressable style={styles.quickActionButton}>
@@ -349,14 +215,14 @@ function QuickActionButton({ icon, title, color }: QuickActionButtonProps) {
         intensity={isDark ? 15 : 30} 
         tint={isDark ? 'dark' : 'light'} 
         style={[styles.quickActionIcon, {
-          backgroundColor: colors.background.surface[isDark ? 'dark' : 'light'],
+          backgroundColor: colors.background.surface,
         }]}
       >
         <IconSymbol name={icon} size={24} color={color} />
       </BlurView>
-      <Text style={[styles.quickActionText, { 
-        color: colors.text.primary[isDark ? 'dark' : 'light']
-      }]}>{title}</Text>
+      <Text style={[styles.quickActionText, { color: colors.text.primary }]}>
+        {title}
+      </Text>
     </Pressable>
   );
 }
@@ -548,7 +414,6 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: colors.status.success.light,
     borderRadius: 4,
   },
   progressLabels: {

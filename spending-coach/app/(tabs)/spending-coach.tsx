@@ -1,703 +1,256 @@
-import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
-import React, { useCallback, useState } from 'react';
-import { StyleSheet, View, TouchableOpacity, Platform, ScrollView } from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
-import { IconSymbol, IconSymbolName } from '@/components/ui/IconSymbol';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import { StyleSheet, View } from 'react-native';
+import { Text } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { IconSymbol, IconSymbolName } from '@/components/ui/IconSymbol';
+import ParallaxScrollView from '@/components/ParallaxScrollView';
+
+type InsightType = 'warning' | 'info' | 'success' | 'error';
+type Insight = {
+  title: string;
+  message: string;
+  type: InsightType;
+  icon: IconSymbolName;
+};
 
 export default function SpendingCoachScreen() {
-  const [moneyLeft, setMoneyLeft] = useState(250);
-  const [showAlert, setShowAlert] = useState(true);
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  const themeColors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? 'light'];
 
-  const handleCool = useCallback(() => {
-    setShowAlert(false);
-  }, []);
+  const insights: Insight[] = [
+    {
+      title: "Spending Alert",
+      message: "You're spending 30% more on dining this month",
+      type: "warning",
+      icon: "chart.line.uptrend.xyaxis"
+    },
+    {
+      title: "Saving Opportunity",
+      message: "Set aside $200 this week to reach your goal",
+      type: "info",
+      icon: "dollarsign.circle"
+    }
+  ];
 
-  const handleCutBack = useCallback(() => {
-    setShowAlert(false);
-    // Additional feedback logic could go here
-  }, []);
-
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: Colors[isDark ? 'dark' : 'light'].background,
+  const goals = [
+    {
+      name: "Vacation Fund",
+      current: 2500,
+      target: 5000,
+      dueDate: "Dec 2023"
     },
-    header: {
-      paddingTop: 60,
-      paddingBottom: 30,
-      paddingHorizontal: 20,
-      borderBottomLeftRadius: 24,
-      borderBottomRightRadius: 24,
-    },
-    headerContent: {
-      alignItems: 'center',
-    },
-    headerTitle: {
-      fontSize: 28,
-      fontWeight: '700',
-      color: '#ffffff',
-      marginBottom: 8,
-    },
-    headerSubtitle: {
-      fontSize: 16,
-      color: 'rgba(255, 255, 255, 0.8)',
-    },
-    budgetCard: {
-      margin: 16,
-      borderRadius: 16,
-      overflow: 'hidden',
-      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    },
-    balanceContainer: {
-      padding: 20,
-    },
-    balanceTitle: {
-      fontSize: 18,
-      marginBottom: 8,
-    },
-    balanceAmount: {
-      fontSize: 36,
-      fontWeight: '700',
-      marginBottom: 4,
-    },
-    balancePeriod: {
-      fontSize: 14,
-      opacity: 0.7,
-      marginBottom: 16,
-    },
-    progressContainer: {
-      marginTop: 16,
-    },
-    progressBar: {
-      height: 8,
-      backgroundColor: 'rgba(99, 102, 241, 0.2)',
-      borderRadius: 4,
-      overflow: 'hidden',
-    },
-    progressFill: {
-      height: '100%',
-      backgroundColor: '#6366f1',
-      borderRadius: 4,
-    },
-    progressLabels: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginTop: 8,
-    },
-    progressLabel: {
-      fontSize: 13,
-      opacity: 0.7,
-    },
-    section: {
-      padding: 16,
-    },
-    sectionTitle: {
-      fontSize: 18,
-      fontWeight: '600',
-      marginBottom: 16,
-    },
-    transactionList: {
-      gap: 12,
-    },
-    transactionItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      padding: 16,
-      borderRadius: 12,
-      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    },
-    transactionIcon: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: '#6366f1',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    transactionDetails: {
-      flex: 1,
-      marginLeft: 12,
-    },
-    transactionTitle: {
-      fontSize: 16,
-      fontWeight: '500',
-    },
-    transactionCategory: {
-      fontSize: 13,
-      opacity: 0.7,
-    },
-    transactionRight: {
-      alignItems: 'flex-end',
-    },
-    transactionAmount: {
-      fontSize: 16,
-      fontWeight: '600',
-    },
-    transactionTime: {
-      fontSize: 12,
-      opacity: 0.7,
-    },
-    insightCards: {
-      flexDirection: 'row',
-      gap: 12,
-    },
-    insightCard: {
-      flex: 1,
-      padding: 16,
-      borderRadius: 12,
-      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-      alignItems: 'center',
-    },
-    insightTitle: {
-      fontSize: 14,
-      fontWeight: '500',
-      marginTop: 8,
-      textAlign: 'center',
-    },
-    insightDescription: {
-      fontSize: 12,
-      opacity: 0.7,
-      marginTop: 4,
-      textAlign: 'center',
-    },
-    recommendationList: {
-      gap: 12,
-    },
-    recommendationItem: {
-      flexDirection: 'row',
-      padding: 16,
-      borderRadius: 12,
-      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-      alignItems: 'center',
-    },
-    recommendationContent: {
-      marginLeft: 12,
-      flex: 1,
-    },
-    recommendationTitle: {
-      fontSize: 16,
-      fontWeight: '500',
-      marginBottom: 4,
-    },
-    recommendationDescription: {
-      fontSize: 13,
-      opacity: 0.7,
-    },
-    alertOverlay: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: 20,
-    },
-    alertContent: {
-      width: '100%',
-      padding: 24,
-      borderRadius: 16,
-      alignItems: 'center',
-      backgroundColor: 'rgba(30, 41, 59, 0.95)',
-    },
-    alertTitle: {
-      fontSize: 20,
-      fontWeight: '600',
-      color: '#ffffff',
-      marginTop: 16,
-      marginBottom: 8,
-    },
-    alertMessage: {
-      fontSize: 16,
-      color: 'rgba(255, 255, 255, 0.8)',
-      textAlign: 'center',
-      marginBottom: 24,
-    },
-    buttonContainer: {
-      flexDirection: 'row',
-      gap: 12,
-    },
-    button: {
-      paddingVertical: 12,
-      paddingHorizontal: 24,
-      borderRadius: 12,
-      minWidth: 120,
-      alignItems: 'center',
-    },
-    coolButton: {
-      backgroundColor: '#4A4A4A',
-    },
-    cutBackButton: {
-      backgroundColor: '#6366f1',
-    },
-    buttonText: {
-      color: '#ffffff',
-      fontSize: 16,
-      fontWeight: '600',
-    },
-  });
+    {
+      name: "Emergency Fund",
+      current: 4000,
+      target: 10000,
+      dueDate: "Mar 2024"
+    }
+  ];
 
   return (
-    <ScrollView 
-      style={[
-        styles.container,
-        { backgroundColor: colorScheme === 'dark' ? Colors.dark.background : Colors.light.background }
-      ]}
-    >
-      {/* Header Section */}
-      <LinearGradient
-        colors={isDark ? ['#818cf8', '#6366f1'] : ['#6366f1', '#4f46e5']}
-        style={styles.header}
-      >
-        <View style={styles.headerContent}>
-          <ThemedText style={styles.headerTitle}>Spending Coach</ThemedText>
-          <ThemedText style={styles.headerSubtitle}>Your Financial Advisor</ThemedText>
-        </View>
-      </LinearGradient>
-
-      {/* Weekly Budget Status */}
-      <BlurView
-        intensity={isDark ? 20 : 40}
-        tint={isDark ? 'dark' : 'light'}
-        style={styles.budgetCard}
-      >
-        <View style={styles.balanceContainer}>
-          <ThemedText type="title" style={styles.balanceTitle}>Weekly Budget Status</ThemedText>
-          <ThemedText style={styles.balanceAmount}>${moneyLeft}</ThemedText>
-          <ThemedText style={styles.balancePeriod}>remaining for this week</ThemedText>
-          
-          {/* Progress Bar */}
-          <View style={styles.progressContainer}>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: `${(moneyLeft / 400) * 100}%` }]} />
+    <ParallaxScrollView
+      headerBackgroundColor={colors.primary}
+      headerImage={
+        <View style={styles.headerImageContainer}>
+          <LinearGradient
+            colors={[colors.primary.main, colors.primary.dark]}
+            style={StyleSheet.absoluteFill}
+          >
+            <View style={styles.headerContent}>
+              <Text style={[styles.headerTitle, { color: colors.primary.contrast }]}>
+                Spending Coach
+              </Text>
+              <View style={styles.balanceContainer}>
+                <Text style={[styles.balanceLabel, { color: colors.primary.contrast }]}>
+                  Available Balance
+                </Text>
+                <Text style={[styles.balanceAmount, { color: colors.primary.contrast }]}>
+                  $2,450.00
+                </Text>
+              </View>
             </View>
-            <View style={styles.progressLabels}>
-              <ThemedText style={styles.progressLabel}>$150 spent</ThemedText>
-              <ThemedText style={styles.progressLabel}>$400 budget</ThemedText>
+          </LinearGradient>
+        </View>
+      }
+    >
+      <View style={[styles.mainContent, { backgroundColor: colors.background.main }]}>
+        {/* Insights Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
+            Smart Insights
+          </Text>
+          {insights.map((insight, index) => (
+            <View 
+              key={index} 
+              style={[styles.insightCard, { backgroundColor: colors.background.card }]}
+            >
+              <IconSymbol 
+                name={insight.icon} 
+                size={24} 
+                color={colors.status[insight.type].main} 
+              />
+              <View style={styles.insightContent}>
+                <Text style={[styles.insightTitle, { color: colors.text.primary }]}>
+                  {insight.title}
+                </Text>
+                <Text style={[styles.insightMessage, { color: colors.text.secondary }]}>
+                  {insight.message}
+                </Text>
+              </View>
             </View>
-          </View>
+          ))}
         </View>
-      </BlurView>
 
-      {/* Recent Activity */}
-      <View style={styles.section}>
-        <ThemedText style={styles.sectionTitle}>Recent Activity</ThemedText>
-        <View style={styles.transactionList}>
-          <TransactionItem
-            icon="cart.fill"
-            title="Takeout"
-            amount={-50}
-            category="Food"
-            time="2 hours ago"
-          />
-          <TransactionItem
-            icon="cart.fill"
-            title="Shopping"
-            amount={-75}
-            category="Retail"
-            time="Yesterday"
-          />
-        </View>
-      </View>
-
-      {/* Insights Section */}
-      <View style={styles.section}>
-        <ThemedText style={styles.sectionTitle}>Spending Insights</ThemedText>
-        <View style={styles.insightCards}>
-          <InsightCard
-            icon="chart.line.uptrend.xyaxis"
-            title="Spending Trend"
-            description="15% higher than last week"
-            type="warning"
-          />
-          <InsightCard
-            icon="cart.fill"
-            title="Top Category"
-            description="Food & Dining"
-            type="info"
-          />
-        </View>
-      </View>
-
-      {/* Recommendations */}
-      <View style={styles.section}>
-        <ThemedText style={styles.sectionTitle}>Recommendations</ThemedText>
-        <View style={styles.recommendationList}>
-          <RecommendationItem
-            icon="chart.line.uptrend.xyaxis"
-            title="Consider meal prep"
-            description="Save up to $200/month on food"
-          />
-          <RecommendationItem
-            icon="chart.line.uptrend.xyaxis"
-            title="Budget adjustment needed"
-            description="Entertainment spending exceeds limit"
-          />
-        </View>
-      </View>
-
-      {/* Spending Alert */}
-      {showAlert && (
-        <Animated.View 
-          entering={FadeIn.duration(500)}
-          exiting={FadeOut.duration(300)}
-          style={styles.alertOverlay}
-        >
-          <BlurView intensity={70} tint="dark" style={styles.alertContent}>
-            <IconSymbol name="dollarsign.circle.fill" size={32} color="#FFD700" />
-            <ThemedText style={styles.alertTitle}>Spending Alert</ThemedText>
-            <ThemedText style={styles.alertMessage}>
-              Recent $50 purchase on takeout detected. You have $200 left this week.
-              Would you like to continue this spending pattern?
-            </ThemedText>
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity 
-                style={[styles.button, styles.coolButton]} 
-                onPress={handleCool}
-              >
-                <ThemedText style={styles.buttonText}>Continue</ThemedText>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.button, styles.cutBackButton]} 
-                onPress={handleCutBack}
-              >
-                <ThemedText style={styles.buttonText}>Cut Back</ThemedText>
-              </TouchableOpacity>
+        {/* Goals Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
+            Savings Goals
+          </Text>
+          {goals.map((goal, index) => (
+            <View 
+              key={index} 
+              style={[styles.goalCard, { backgroundColor: colors.background.card }]}
+            >
+              <View style={styles.goalHeader}>
+                <Text style={[styles.goalName, { color: colors.text.primary }]}>
+                  {goal.name}
+                </Text>
+                <Text style={[styles.goalDate, { color: colors.text.secondary }]}>
+                  Due: {goal.dueDate}
+                </Text>
+              </View>
+              <View style={styles.goalProgress}>
+                <View style={styles.progressBarContainer}>
+                  <View 
+                    style={[styles.progressBar, { backgroundColor: colors.primary.overlay }]}
+                  >
+                    <View 
+                      style={[
+                        styles.progressFill, 
+                        { 
+                          width: `${(goal.current / goal.target) * 100}%`,
+                          backgroundColor: colors.primary.main 
+                        }
+                      ]} 
+                    />
+                  </View>
+                  <Text style={[styles.goalAmount, { color: colors.text.primary }]}>
+                    ${goal.current.toLocaleString()} / ${goal.target.toLocaleString()}
+                  </Text>
+                </View>
+              </View>
             </View>
-          </BlurView>
-        </Animated.View>
-      )}
-    </ScrollView>
-  );
-}
-
-// Component for transaction items
-function TransactionItem({ 
-  icon, 
-  title, 
-  amount, 
-  category, 
-  time 
-}: {
-  icon: IconSymbolName;
-  title: string;
-  amount: number;
-  category: string;
-  time: string;
-}) {
-  const isDark = useColorScheme() === 'dark';
-  
-  return (
-    <BlurView
-      intensity={isDark ? 15 : 30}
-      tint={isDark ? 'dark' : 'light'}
-      style={styles.transactionItem}
-    >
-      <View style={styles.transactionIcon}>
-        <IconSymbol name={icon} size={24} color="#fff" />
+          ))}
+        </View>
       </View>
-      <View style={styles.transactionDetails}>
-        <ThemedText style={styles.transactionTitle}>{title}</ThemedText>
-        <ThemedText style={styles.transactionCategory}>{category}</ThemedText>
-      </View>
-      <View style={styles.transactionRight}>
-        <ThemedText style={styles.transactionAmount}>${Math.abs(amount)}</ThemedText>
-        <ThemedText style={styles.transactionTime}>{time}</ThemedText>
-      </View>
-    </BlurView>
+    </ParallaxScrollView>
   );
-}
-
-// Component for insight cards
-function InsightCard({ 
-  icon, 
-  title, 
-  description, 
-  type 
-}: {
-  icon: IconSymbolName;
-  title: string;
-  description: string;
-  type: 'warning' | 'success' | 'error' | 'info';
-}) {
-  const isDark = useColorScheme() === 'dark';
-  
-  return (
-    <BlurView
-      intensity={isDark ? 15 : 30}
-      tint={isDark ? 'dark' : 'light'}
-      style={styles.insightCard}
-    >
-      <IconSymbol name={icon} size={24} color={getTypeColor(type)} />
-      <ThemedText style={styles.insightTitle}>{title}</ThemedText>
-      <ThemedText style={styles.insightDescription}>{description}</ThemedText>
-    </BlurView>
-  );
-}
-
-// Component for recommendation items
-function RecommendationItem({ 
-  icon, 
-  title, 
-  description 
-}: {
-  icon: IconSymbolName;
-  title: string;
-  description: string;
-}) {
-  const isDark = useColorScheme() === 'dark';
-  
-  return (
-    <BlurView
-      intensity={isDark ? 15 : 30}
-      tint={isDark ? 'dark' : 'light'}
-      style={styles.recommendationItem}
-    >
-      <IconSymbol name={icon} size={24} color="#60a5fa" />
-      <View style={styles.recommendationContent}>
-        <ThemedText style={styles.recommendationTitle}>{title}</ThemedText>
-        <ThemedText style={styles.recommendationDescription}>{description}</ThemedText>
-      </View>
-    </BlurView>
-  );
-}
-
-// Helper function for insight card colors
-function getTypeColor(type: 'warning' | 'success' | 'error' | 'info'): string {
-  switch (type) {
-    case 'warning': return '#facc15';
-    case 'success': return '#4ade80';
-    case 'error': return '#f87171';
-    case 'info': return '#60a5fa';
-    default: return '#60a5fa';
-  }
 }
 
 const styles = StyleSheet.create({
-  container: {
+  headerImageContainer: {
     flex: 1,
   },
-  header: {
+  headerContent: {
+    padding: 20,
     paddingTop: 60,
     paddingBottom: 30,
-    paddingHorizontal: 20,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-  },
-  headerContent: {
-    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#ffffff',
-    marginBottom: 8,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
-  },
-  budgetCard: {
-    margin: 16,
-    borderRadius: 16,
-    overflow: 'hidden',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
   },
   balanceContainer: {
-    padding: 20,
+    marginBottom: 10,
   },
-  balanceTitle: {
-    fontSize: 18,
-    marginBottom: 8,
+  balanceLabel: {
+    fontSize: 16,
+    opacity: 0.8,
+    marginBottom: 5,
   },
   balanceAmount: {
-    fontSize: 36,
-    fontWeight: '700',
-    marginBottom: 4,
+    fontSize: 32,
+    fontWeight: 'bold',
   },
-  balancePeriod: {
-    fontSize: 14,
-    opacity: 0.7,
+  mainContent: {
+    flex: 1,
+    padding: 16,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
     marginBottom: 16,
   },
-  progressContainer: {
-    marginTop: 16,
+  insightCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  insightContent: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  insightTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  insightMessage: {
+    fontSize: 14,
+  },
+  goalCard: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  goalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  goalName: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  goalDate: {
+    fontSize: 14,
+  },
+  goalProgress: {
+    flex: 1,
+  },
+  progressBarContainer: {
+    flex: 1,
+    gap: 8,
   },
   progressBar: {
     height: 8,
-    backgroundColor: 'rgba(99, 102, 241, 0.2)',
     borderRadius: 4,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#6366f1',
     borderRadius: 4,
   },
-  progressLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-  },
-  progressLabel: {
-    fontSize: 13,
-    opacity: 0.7,
-  },
-  section: {
-    padding: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 16,
-  },
-  transactionList: {
-    gap: 12,
-  },
-  transactionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  transactionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#6366f1',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  transactionDetails: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  transactionTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  transactionCategory: {
-    fontSize: 13,
-    opacity: 0.7,
-  },
-  transactionRight: {
-    alignItems: 'flex-end',
-  },
-  transactionAmount: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  transactionTime: {
-    fontSize: 12,
-    opacity: 0.7,
-  },
-  insightCards: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  insightCard: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    alignItems: 'center',
-  },
-  insightTitle: {
+  goalAmount: {
     fontSize: 14,
-    fontWeight: '500',
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  insightDescription: {
-    fontSize: 12,
-    opacity: 0.7,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  recommendationList: {
-    gap: 12,
-  },
-  recommendationItem: {
-    flexDirection: 'row',
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    alignItems: 'center',
-  },
-  recommendationContent: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  recommendationTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  recommendationDescription: {
-    fontSize: 13,
-    opacity: 0.7,
-  },
-  alertOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  alertContent: {
-    width: '100%',
-    padding: 24,
-    borderRadius: 16,
-    alignItems: 'center',
-    backgroundColor: 'rgba(30, 41, 59, 0.95)',
-  },
-  alertTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#ffffff',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  alertMessage: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  button: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    minWidth: 120,
-    alignItems: 'center',
-  },
-  coolButton: {
-    backgroundColor: '#4A4A4A',
-  },
-  cutBackButton: {
-    backgroundColor: '#6366f1',
-  },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
+    textAlign: 'right',
   },
 });
