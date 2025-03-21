@@ -1,24 +1,68 @@
-import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, RefreshControl } from 'react-native';
 import { Text, Pressable } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { IconSymbol, IconSymbolName } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { IconSymbol, IconSymbolName } from '@/components/ui/IconSymbol';
+import ParallaxScrollView from '@/components/ParallaxScrollView';
+import { SpendingCoachService } from '@/services/mockSpendingCoachService';
+import { useState, useEffect, useCallback } from 'react';
+import { SpendingCoachData, Transaction } from '@/types/spending-coach';
+import { BlurView } from 'expo-blur';
 
 export default function HomeScreen() {
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
-  const isDark = colorScheme === 'dark';
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
+  
+  const [data, setData] = useState<SpendingCoachData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadData = useCallback(async () => {
+    try {
+      const result = await SpendingCoachService.getData();
+      setData(result);
+    } catch (error) {
+      console.error('Failed to load data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const result = await SpendingCoachService.refreshData();
+      setData(result);
+    } catch (error) {
+      console.error('Failed to refresh data:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  if (loading || !data) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary.main} />
+      </View>
+    );
+  }
 
   return (
     <ParallaxScrollView
-      headerBackgroundColor={{
-        light: Colors.light.background.main,
-        dark: Colors.dark.background.main
-      }}
+      headerBackgroundColor={colors.primary}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={colors.primary.contrast}
+        />
+      }
       headerImage={
         <View style={styles.headerImageContainer}>
           <LinearGradient
@@ -34,16 +78,16 @@ export default function HomeScreen() {
               <View style={styles.progressContainer}>
                 <View style={[styles.progressBar, { backgroundColor: colors.primary.overlay }]}>
                   <View style={[styles.progressFill, { 
-                    width: '65%',
+                    width: `${(data.overview.spent / data.overview.budget) * 100}%`,
                     backgroundColor: colors.status.success.light
                   }]} />
                 </View>
                 <View style={styles.progressLabels}>
                   <Text style={[styles.progressText, { color: colors.text.onOverlay }]}>
-                    $1,850 spent
+                    ${data.overview.spent.toLocaleString()} spent
                   </Text>
                   <Text style={[styles.progressText, { color: colors.text.onOverlay }]}>
-                    $2,800 budget
+                    ${data.overview.budget.toLocaleString()} budget
                   </Text>
                 </View>
               </View>
@@ -51,9 +95,7 @@ export default function HomeScreen() {
 
             {/* Quick Insights */}
             <View style={styles.insightsContainer}>
-              <View style={[styles.insightItem, { 
-                backgroundColor: colors.primary.overlay 
-              }]}>
+              <View style={[styles.insightItem, { backgroundColor: colors.primary.overlay }]}>
                 <IconSymbol 
                   name="chart.line.uptrend.xyaxis" 
                   size={24} 
@@ -64,19 +106,23 @@ export default function HomeScreen() {
                     Biggest Saving
                   </Text>
                   <Text style={[styles.insightValue, { color: colors.primary.contrast }]}>
-                    -15% on Food
+                    -{data.overview.biggestSaving.percentage}% on {data.overview.biggestSaving.category}
                   </Text>
                 </View>
               </View>
-              <View style={styles.insightItem}>
+              <View style={[styles.insightItem, { backgroundColor: colors.primary.overlay }]}>
                 <IconSymbol 
                   name="chart.bar.fill" 
                   size={24} 
                   color={colors.status.warning.light}
                 />
                 <View style={styles.insightText}>
-                  <Text style={styles.insightLabel}>Top Category</Text>
-                  <Text style={styles.insightValue}>Shopping</Text>
+                  <Text style={[styles.insightLabel, { color: colors.text.onOverlay }]}>
+                    Top Category
+                  </Text>
+                  <Text style={[styles.insightValue, { color: colors.primary.contrast }]}>
+                    {data.overview.topCategory.name}
+                  </Text>
                 </View>
               </View>
             </View>
@@ -97,24 +143,21 @@ export default function HomeScreen() {
             </Pressable>
           </View>
           <View style={styles.transactionList}>
-            <TransactionItem 
-              icon="cart.fill"
-              title="Grocery Shopping"
-              amount={-85.50}
-              date="Today"
-            />
-            <TransactionItem 
-              icon="fork.knife"
-              title="Restaurant"
-              amount={-32.40}
-              date="Yesterday"
-            />
-            <TransactionItem 
-              icon="car.fill"
-              title="Gas Station"
-              amount={-45.00}
-              date="Sep 20"
-            />
+            {data?.transactions?.length ? (
+              data.transactions.map((transaction: Transaction) => (
+                <TransactionItem 
+                  key={transaction.id}
+                  icon={transaction.icon}
+                  title={transaction.title}
+                  amount={transaction.amount}
+                  date={transaction.date}
+                />
+              ))
+            ) : (
+              <Text style={[styles.emptyText, { color: colors.text.secondary }]}>
+                No transactions to display
+              </Text>
+            )}
           </View>
         </View>
 
@@ -450,6 +493,16 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#ffffff',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    textAlign: 'center',
+    padding: 16,
+    fontSize: 16,
   },
 });
 

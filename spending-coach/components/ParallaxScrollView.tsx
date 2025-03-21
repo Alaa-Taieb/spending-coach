@@ -19,12 +19,14 @@ export default function ParallaxScrollView({
   children,
   headerBackgroundColor,
   headerImage,
-  style, // Add style prop
+  style,
+  refreshControl, // Add this prop
 }: {
   children: React.ReactNode;
   headerBackgroundColor: { light: string; dark: string };
   headerImage: React.ReactNode;
-  style?: ViewStyle; // Add style type
+  style?: ViewStyle;
+  refreshControl?: React.ReactNode; // Add this type
 }) {
   const colorScheme = useColorScheme();
   const scrollY = useRef(new Animated.Value(0)).current;

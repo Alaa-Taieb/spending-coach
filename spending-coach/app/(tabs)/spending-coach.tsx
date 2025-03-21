@@ -1,10 +1,14 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, RefreshControl, Platform } from 'react-native';
 import { Text } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { IconSymbol, IconSymbolName } from '@/components/ui/IconSymbol';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
+import { SpendingCoachService } from '@/services/mockSpendingCoachService';
+import { useState, useEffect, useCallback } from 'react';
+import { SpendingCoachData } from '@/types/spending-coach';
+import { BlurView } from 'expo-blur';
 
 type InsightType = 'warning' | 'info' | 'success' | 'error';
 type Insight = {
@@ -17,47 +21,81 @@ type Insight = {
 export default function SpendingCoachScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const isDark = colorScheme === 'dark';
+  
+  const [data, setData] = useState<SpendingCoachData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const insights: Insight[] = [
-    {
-      title: "Spending Alert",
-      message: "You're spending 30% more on dining this month",
-      type: "warning",
-      icon: "chart.line.uptrend.xyaxis"
-    },
-    {
-      title: "Saving Opportunity",
-      message: "Set aside $200 this week to reach your goal",
-      type: "info",
-      icon: "dollarsign.circle"
+  const loadData = useCallback(async () => {
+    try {
+      const result = await SpendingCoachService.getData();
+      setData(result);
+    } catch (error) {
+      console.error('Failed to load spending coach data:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  }, []);
 
-  const goals = [
-    {
-      name: "Vacation Fund",
-      current: 2500,
-      target: 5000,
-      dueDate: "Dec 2023"
-    },
-    {
-      name: "Emergency Fund",
-      current: 4000,
-      target: 10000,
-      dueDate: "Mar 2024"
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const result = await SpendingCoachService.refreshData();
+      setData(result);
+    } catch (error) {
+      console.error('Failed to refresh spending coach data:', error);
+    } finally {
+      setRefreshing(false);
     }
-  ];
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary.main} />
+      </View>
+    );
+  }
+
+  if (!data) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={[styles.errorText, { color: colors.text.primary }]}>
+          Failed to load data
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <ParallaxScrollView
-      headerBackgroundColor={colors.primary}
+      headerBackgroundColor={{
+        light: colors.primary.main,
+        dark: colors.primary.main
+      }}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={colors.primary.contrast}
+        />
+      }
       headerImage={
         <View style={styles.headerImageContainer}>
           <LinearGradient
             colors={[colors.primary.main, colors.primary.dark]}
             style={StyleSheet.absoluteFill}
           >
-            <View style={styles.headerContent}>
+            <BlurView
+              intensity={isDark ? 20 : 40}
+              tint={isDark ? 'dark' : 'light'}
+              style={styles.headerContent}
+            >
               <Text style={[styles.headerTitle, { color: colors.primary.contrast }]}>
                 Spending Coach
               </Text>
@@ -66,10 +104,24 @@ export default function SpendingCoachScreen() {
                   Available Balance
                 </Text>
                 <Text style={[styles.balanceAmount, { color: colors.primary.contrast }]}>
-                  $2,450.00
+                  ${data?.balance.available.toLocaleString(undefined, { 
+                    minimumFractionDigits: 2, 
+                    maximumFractionDigits: 2 
+                  })}
                 </Text>
+                <View style={styles.balanceDetails}>
+                  <IconSymbol 
+                    name="chart.bar.fill"
+                    size={12} 
+                    color={colors.primary.contrast} 
+                    style={styles.balanceIcon}
+                  />
+                  <Text style={[styles.balanceUpdated, { color: colors.primary.contrast }]}>
+                    Last updated: {new Date(data?.balance.lastUpdated ?? '').toLocaleTimeString()}
+                  </Text>
+                </View>
               </View>
-            </View>
+            </BlurView>
           </LinearGradient>
         </View>
       }
@@ -80,9 +132,9 @@ export default function SpendingCoachScreen() {
           <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
             Smart Insights
           </Text>
-          {insights.map((insight, index) => (
+          {data.insights.map((insight) => (
             <View 
-              key={index} 
+              key={insight.id} 
               style={[styles.insightCard, { backgroundColor: colors.background.card }]}
             >
               <IconSymbol 
@@ -107,9 +159,9 @@ export default function SpendingCoachScreen() {
           <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
             Savings Goals
           </Text>
-          {goals.map((goal, index) => (
+          {data.goals.map((goal) => (
             <View 
-              key={index} 
+              key={goal.id} 
               style={[styles.goalCard, { backgroundColor: colors.background.card }]}
             >
               <View style={styles.goalHeader}>
@@ -117,7 +169,7 @@ export default function SpendingCoachScreen() {
                   {goal.name}
                 </Text>
                 <Text style={[styles.goalDate, { color: colors.text.secondary }]}>
-                  Due: {goal.dueDate}
+                  Due: {new Date(goal.dueDate).toLocaleDateString()}
                 </Text>
               </View>
               <View style={styles.goalProgress}>
@@ -150,29 +202,44 @@ export default function SpendingCoachScreen() {
 
 const styles = StyleSheet.create({
   headerImageContainer: {
-    flex: 1,
+    height: 200,
   },
   headerContent: {
+    flex: 1,
     padding: 20,
-    paddingTop: 60,
-    paddingBottom: 30,
+    justifyContent: 'center', // Add this to center content vertically
+    paddingTop: Platform.OS === 'ios' ? 40 : 20, // Adjust padding based on platform
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 16, // Reduced from 24 to 16 for better spacing
   },
   balanceContainer: {
-    marginBottom: 10,
+    marginBottom: 16,
   },
   balanceLabel: {
     fontSize: 16,
     opacity: 0.8,
-    marginBottom: 5,
+    marginBottom: 8,
   },
   balanceAmount: {
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: 'bold',
+    letterSpacing: 0.5,
+  },
+  balanceDetails: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  balanceIcon: {
+    marginRight: 4,
+    opacity: 0.7,
+  },
+  balanceUpdated: {
+    fontSize: 12,
+    opacity: 0.7,
   },
   mainContent: {
     flex: 1,
@@ -253,4 +320,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'right',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    fontSize: 16,
+  },
+
 });
